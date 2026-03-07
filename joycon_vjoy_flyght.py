@@ -9,7 +9,7 @@ STICK_DEADZONE = 0.15
 GYRO_DEADZONE = 100
 ALPHA = 0.10
 HYSTERESIS = 12
-YAW_SPEED = 0.05  # スムージングの速さ (小さいほどゆっくり動く)
+YAW_SPEED = 0.05 
 
 # --- キャリブレーションデータ ---
 OFFSETS = {
@@ -68,9 +68,9 @@ def main():
         'R': {'b': [], 's': (0.0, 0.0), 'g_filt': [0.0, 0.0], 'dg': [0, 0]}
     }
     
-    current_yaw = 0.0 # ヨーの現在値を保持
-    
+    current_yaw = 0.0
     devices = []
+    
     for info in hid.enumerate(0x057e):
         pid = info['product_id']
         if pid in [0x2006, 0x2007]:
@@ -79,7 +79,7 @@ def main():
             d.write(b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x30')
             devices.append({'dev': d, 'side': "L" if pid == 0x2006 else "R", 'pid': pid})
 
-    print("=== Joy-Con Flight System (Smoothed Yaw) ===")
+    print("=== Joy-Con Full Monitor (L/R All Data) ===")
     
     try:
         while True:
@@ -87,16 +87,20 @@ def main():
                 report = dev['dev'].read(64)
                 if report and len(report) >= 25:
                     side = dev['side']; st = con_states[side]
+                    # スティック生値の抽出
                     s_idx = 6 if side == "L" else 9
                     raw_h = report[s_idx] | ((report[s_idx+1] & 0x0F) << 8)
                     raw_v = (report[s_idx+1] >> 4) | (report[s_idx+2] << 4)
+                    
                     st['s'] = normalize_stick(raw_h, raw_v, side)
                     st['b'] = get_buttons(report, side)
                     
+                    # ジャイロ生値の抽出
                     gx_raw = int.from_bytes(bytes(report[19:21]), 'little', signed=True) - OFFSETS[dev['pid']]['x']
                     gz_raw = int.from_bytes(bytes(report[23:25]), 'little', signed=True) - OFFSETS[dev['pid']]['z']
                     gx_in = gx_raw if abs(gx_raw) > GYRO_DEADZONE else 0
                     gz_in = gz_raw if abs(gz_raw) > GYRO_DEADZONE else 0
+                    
                     st['g_filt'][0] = st['g_filt'][0] * (1 - ALPHA) + gx_in * ALPHA
                     st['g_filt'][1] = st['g_filt'][1] * (1 - ALPHA) + gz_in * ALPHA
                     
@@ -105,25 +109,35 @@ def main():
                     if abs(new_gx - st['dg'][0]) > HYSTERESIS or gx_in == 0: st['dg'][0] = new_gx if gx_in != 0 else 0
                     if abs(new_gz - st['dg'][1]) > HYSTERESIS or gz_in == 0: st['dg'][1] = new_gz if gz_in != 0 else 0
 
-            # --- ヨーのスムージング処理 ---
+            # ヨーのスムージング
             target_yaw = 0.0
             if 'L2' in con_states['L']['b']: target_yaw += 1.0
             if 'L1' in con_states['L']['b']: target_yaw -= 1.0
+            if current_yaw < target_yaw: current_yaw = min(target_yaw, current_yaw + YAW_SPEED)
+            elif current_yaw > target_yaw: current_yaw = max(target_yaw, current_yaw - YAW_SPEED)
 
-            if current_yaw < target_yaw:
-                current_yaw = min(target_yaw, current_yaw + YAW_SPEED)
-            elif current_yaw > target_yaw:
-                current_yaw = max(target_yaw, current_yaw - YAW_SPEED)
-
-            # --- vJoy 出力 ---
+            # vJoy 出力
             j.set_axis(pyvjoy.HID_USAGE_RX, to_vjoy(con_states['R']['dg'][0]))
             j.set_axis(pyvjoy.HID_USAGE_RY, to_vjoy(con_states['R']['dg'][1]))
             j.set_axis(pyvjoy.HID_USAGE_X, to_vjoy(con_states['L']['dg'][0])) 
             j.set_axis(pyvjoy.HID_USAGE_Y, to_vjoy(-con_states['L']['dg'][1])) 
-            j.set_axis(pyvjoy.HID_USAGE_RZ, to_vjoy(current_yaw)) # スムーズな値を送信
+            j.set_axis(pyvjoy.HID_USAGE_RZ, to_vjoy(current_yaw))
             j.set_axis(pyvjoy.HID_USAGE_Z, to_vjoy(con_states['L']['s'][1]))
 
-            sys.stdout.write(f"\rYaw: {current_yaw:+.2f} | Pilot(L): {con_states['L']['dg']} | Cam(R): {con_states['R']['dg']}")
+            # --- 全データ固定長出力 ---
+            l_gyro = f"G:{con_states['L']['dg'][0]:+05d},{con_states['L']['dg'][1]:+05d}"
+            r_gyro = f"G:{con_states['R']['dg'][0]:+05d},{con_states['R']['dg'][1]:+05d}"
+            l_stick = f"S:{con_states['L']['s'][0]:+1.2f},{con_states['L']['s'][1]:+1.2f}"
+            r_stick = f"S:{con_states['R']['s'][0]:+1.2f},{con_states['R']['s'][1]:+1.2f}"
+            l_btns = ",".join(con_states['L']['b'])[:10]
+            r_btns = ",".join(con_states['R']['b'])[:10]
+            
+            # コンソール一行出力 (幅を固定してチラつきを防止)
+            sys.stdout.write(
+                f"\r[L] {l_gyro} {l_stick} B:{l_btns:10} | "
+                f"[R] {r_gyro} {r_stick} B:{r_btns:10} | "
+                f"Y:{current_yaw:+.2f} "
+            )
             sys.stdout.flush()
             time.sleep(0.01)
 
