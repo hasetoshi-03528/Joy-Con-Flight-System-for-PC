@@ -1,40 +1,66 @@
-# Joy-Con Flight System for PC
+# Joy-Con Absolute Control for YSFLIGHT & MSFS
+**Architect-Driven AI Implementation of a High-Precision Flight Bridge**
 
-Nintendo Switch の Joy-Con 2本を使い、ジャイロ操作でフライトシミュレーター（MSFS2020・YSFlight等）を直感的に操縦するための Python システムです。
+## 1. プロジェクト概要
+本プロジェクトは、Nintendo Joy-Conの慣性計測装置（IMU）を活用し、PC用フライトシミュレーター（YSFLIGHT、MSFS2020等）を直感的に操縦するためのブリッジシステムです。
 
-## なぜ作ったか
+既存のフライトスティックは高価ですが、Joy-Conの高性能なジャイロセンサーを活用することで、安価かつ直感的な操縦を実現します。HIDプロトコルでJoy-Conと直接通信し、vJoy仮想ジョイスティックおよびキーボードエミュレーションを介してゲームに入力を渡す仕組みを一から実装しました。
 
-既存のフライトスティックは高価で、Joy-Con のジャイロセンサーを活用すれば安価かつ直感的な操縦が実現できると考えて開発しました。HID プロトコルで Joy-Con と直接通信し、vJoy 仮想ジョイスティック経由でゲームに入力を渡す仕組みを一から実装しています。
+### 技術スタック
+- **Language:** Python 3.10+
+- **Protocol:** Bluetooth HID (via `hidapi`)
+- **Output:** `pyvjoy` (Virtual Joystick), `pynput` (Keyboard Simulation)
+- **Architecture:** Multi-threaded Real-time Processing
 
-## 技術的なポイント
+---
 
-- **HID 直接通信**：`hidapi` ライブラリで Joy-Con とBluetooth HID 通信
-- **ジャイロキャリブレーション**：個体差を吸収するオフセット・スティックキャリブレーション機構を実装
-- **vJoy 仮想デバイス連携**：`pyvjoy` で Windows の仮想ジョイスティックとして認識させ、あらゆるゲームに対応
-- **デジタルスムージング**：L1/L2 ボタンによるラダー操作のなめらかな補間処理
+## 2. 開発プロセスとアーキテクトの意思決定
+本システムは、管理者が「論理構造の定義とボトルネックの特定」を行い、AIがその要求に対する「最適化実装」を行うという共同作業によって完成しました。単なるコード生成ではなく、以下の論理的判断に基づきシステムを昇華させています。
 
-## 動作環境
+### 🛠 管理者による最適化の軌跡（対話ログの要約）
+| 課題（AIの初期提案） | 管理者の判断と指示 | 解決策（最終実装） |
+| :--- | :--- | :--- |
+| **処理ラグ**（逐次処理） | 「まだラグがある」と断じ、I/O待ちの干渉を特定。 | **マルチスレッド化**による受信と描画の完全分離。 |
+| **入力バッファ溢れ** | Windowsの入力キュー滞留による遅延を分析。 | **ステート制御（エッジ検出）**による信号送信の最小化。 |
+| **YSFlight整合性** | 内部番号の不一致を指摘（TRG 4 1設定等）。 | **R1ボタンをvJoy Button 1**に完全固定。 |
+| **視点操作の直感性** | 汎用キー設定の不備を修正指示。 | **Rスティック：上U / 下J** へのマッピング変更。 |
+| **トレーサビリティ** | デバッグ用データ（acc/スティック値）の欠落を看破。 | 出力フォーマットを固定化し、全データ同期表示。 |
 
-- Windows 10 / 11
-- Python 3.x
-- Joy-Con（左右各1本）、Bluetooth 接続
+### コンソール出力仕様
 
-## セットアップ
-```bash
-pip install hidapi pyvjoy
+デバッグ効率と操縦中の視認性を最大化するため、独自の高密度モニタリングUIを実装しています。ANSIエスケープシーケンスにより、リアルタイムに数値を上書き更新します。
+
+#### 表示例
+```text
+JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
+[L] G[R:+0120,P:-0045](+3470,+1950,+0860) S:+0.00,+0.00 B:L1    | [R] G[R:+0005,P:+0010](+3700,+1780,+0020) S:+0.10,-0.85 B:R3   | B_vJoy: 1 12 KBD: U SPACE
 ```
+---
 
-1. [vJoy](https://github.com/shmdn/vJoy/releases) をインストール
-2. Joy-Con を PC に Bluetooth ペアリング
-3. `joycon_status.py` でジャイロオフセット値を取得し、`joycon_vjoy_flyght.py` の `OFFSETS` に反映
-4. `joycon_analog.py` でスティックキャリブレーション値を取得し `CALIB` に反映
-5. `JoyCon_flight.py` を実行
+## 3. 技術的ハイライト
+- **HID直接通信**: `hidapi`により、0x30レポートを用いた高精度なパケットデコード（ビット演算）を実装。
+- **低遅延マルチスレッド**: 15ms周期のHIDサンプリングを阻害しないよう、受信スレッドと描画スレッドを非同期で駆動。
+- **ジャイロキャリブレーション**: 個体差を吸収するオフセット・スティックキャリブレーション機構。
+- **終了シーケンス**: Ctrl+Cによるシグナルハンドリングを実装し、終了時に `Finnish!!!` を表示。
 
-## 使用ファイル
+---
+
+## 4. 使用ファイル構成
 
 | ファイル | 役割 |
 |---|---|
-| `JoyCon_flight.py` | メインスクリプト |
-| `joycon_status.py` | ジャイロ・スティック値の確認ツール |
-| `joycon_vjoy_flyght.py` | vJoy 連携・入力変換ロジック |
-| `joycon_vjoy_ysflight.py` | YSFlight 向け設定版 |
+| `JoyCon_flight.py` | **メインスクリプト**（マルチスレッド・ステート制御版） |
+| `joycon_status.py` | ジャイロ・スティック値の確認・オフセット取得ツール |
+| `joycon_vjoy_flight.py` | vJoy連携・標準入力変換ロジック |
+| `joycon_vjoy_ysflight.py` | YSFlight特化型設定版 |
+
+---
+
+## 5. セットアップと実行
+
+### 前準備
+1. [vJoy](https://github.com/shmdn/vJoy/releases) をインストール。
+2. Joy-ConをPCにBluetoothペアリング。
+3. 依存ライブラリのインストール：
+   ```bash
+   pip install hidapi pyvjoy pynput
