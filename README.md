@@ -35,6 +35,17 @@
 JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
 [L] G[R:+0120,P:-0045](+3470,+1950,+0860) S:+0.00,+0.00 B:L1    | [R] G[R:+0005,P:+0010](+3700,+1780,+0020) S:+0.10,-0.85 B:R3   | B_vJoy: 1 12 KBD: U SPACE
 ```
+
+#### データフィールド定義
+| フィールド | 例 | 説明 |
+| :--- | :--- | :--- |
+| **G (Gyro)** | `G[R:+0120,P:-0045]` | ジャイロ補正後のロールとピッチ。機体の姿勢に直接対応します。 |
+| **( ) (Acc)** | `(+3470,+1950,+0860)` | 加速度センサーのXYZ生データ。物理的な振動や傾斜の監視に使用します。 |
+| **S (Stick)** | `S:+0.10,-0.85` | 正規化されたアナログスティック値（-1.00 ～ +1.00 の範囲）。 |
+| **B (Button)** | `B:L1` | 現在Joy-Con上で物理的に押されているボタンの名称。 |
+| **B_vJoy** | `B_vJoy: 1 12` | vJoy（仮想ジョイスティック）に送信されている仮想ボタンID。 |
+| **KBD** | `KBD: U SPACE` | **ステート制御**ロジックによってWindowsへ送出されているアクティブなキーボード入力。 |
+
 ---
 
 ## 3. 技術的ハイライト
@@ -64,3 +75,77 @@ JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
 3. 依存ライブラリのインストール：
    ```bash
    pip install hidapi pyvjoy pynput
+   ```
+
+---
+
+---
+
+
+
+
+# . English Version (Project Overview & Documentation)
+
+# Joy-Con Absolute Control for YSFLIGHT & MSFS
+**Architect-Driven AI Implementation of a High-Precision Flight Bridge**
+
+## 1. Project Overview
+This project is a high-precision flight control bridge that utilizes the Inertial Measurement Unit (IMU) of Nintendo Joy-Cons to enable intuitive piloting in flight simulators such as YSFLIGHT and MSFS2020.
+
+While dedicated flight sticks are often expensive, this system leverages the high-performance gyro sensors in Joy-Cons to provide a cost-effective yet professional-grade piloting experience. It communicates directly with Joy-Cons via the HID protocol and bridges inputs to the game through vJoy and low-layer keyboard emulation.
+
+### Technical Stack
+- **Language:** Python 3.10+
+- **Protocol:** Bluetooth HID (via `hidapi`)
+- **Output:** `pyvjoy` (Virtual Joystick), `pynput` (Keyboard Simulation)
+- **Architecture:** Multi-threaded Real-time Processing
+
+---
+
+## 2. Development Process & Architect's Decision-Making
+This system was developed through a collaborative process where the **Architect (Human)** defined the logic and identified bottlenecks, while the **AI (Execution Engine)** provided optimized implementations. It is not merely AI-generated code, but a system refined through the following logical interventions.
+
+### 🛠 Engineering Milestone (Architect's Log)
+| Challenge (Initial AI Proposal) | Architect's Direction | Solution (Final Implementation) |
+| :--- | :--- | :--- |
+| **Input Lag** (Sequential Processing) | Identified I/O interference and demanded zero-latency performance. | **Multi-threaded architecture** separating HID reception from UI/Output. |
+| **Input Buffer Overflow** | Analyzed Windows input queue lag during rapid key sends. | **State Control (Edge Detection)** logic to minimize redundant signal transmission. |
+| **YSFlight Integration** | Corrected mapping inconsistencies (e.g., TRG 4 1 settings). | Hard-coded **R1 Button to vJoy Button 1** for seamless firing. |
+| **View Control Logic** | Redefined mapping for intuitive spatial awareness. | Optimized **R-Stick to U/J keys** for vertical head tracking. |
+| **Traceability** | Demanded full transparency of raw sensor data. | Established the **"Golden Rule" format** for synchronized telemetry. |
+
+### Console Output: The "Golden Rule" Format
+To maximize debugging efficiency and in-flight monitoring, the system implements a high-density telemetry UI. It utilizes ANSI escape sequences to overwrite and update values in real-time.
+
+#### Example
+```text
+JoyCon（L）Battely：100％｜JoyCon（R）Battely：075％
+[L] G[R:+0120,P:-0045](+3470,+1950,+0860) S:+0.00,+0.00 B:L1    | [R] G[R:+0005,P:+0010](+3700,+1780,+0020) S:+0.10,-0.85 B:R3   | B_vJoy: 1 12 KBD: U SPACE
+```
+
+### Data Field Definitions
+| Field | Example | Description |
+| :--- | :--- | :--- |
+| **G (Gyro)** | `G[R:+0120,P:-0045]` | Roll and Pitch after gyro compensation. Maps directly to aircraft attitude. |
+| **( ) (Acc)** | `(+3470,+1950,+0860)` | Raw accelerometer XYZ data. Used for monitoring physical vibration and tilt. |
+| **S (Stick)** | `S:+0.10,-0.85` | Normalized analog stick values (ranging from -1.00 to +1.00). |
+| **B (Button)** | `B:L1` | Name of the physical button currently pressed on the Joy-Con. |
+| **B_vJoy** | `B_vJoy: 1 12` | Virtual button IDs being transmitted to vJoy. |
+| **KBD** | `KBD: U SPACE` | Active keyboard inputs being sent to Windows, managed by **State Control** logic. |
+
+---
+
+## 3. Technical Highlights
+- **Direct HID Communication**: High-precision packet decoding using 0x30 reports via `hidapi`.
+- **Low-Latency Multi-threading**: An asynchronous architecture that ensures 15ms HID sampling cycles remain uninterrupted by UI rendering.
+- **Gyro Calibration**: Built-in offset and stick calibration to eliminate hardware-specific drift.
+- **Signal Handling**: Implemented clean-up logic on `Ctrl+C` to ensure safe process termination with a `Finnish!!!` notification.
+
+---
+
+## 4. Setup & Execution
+1. Install [vJoy](https://github.com/shmdn/vJoy/releases).
+2. Pair Joy-Cons via Bluetooth.
+3. Install dependencies: `pip install hidapi pyvjoy pynput`
+4. Run `joycon_status.py` to get offsets, then update constants in the main script.
+5. Execute `JoyCon_flight.py`. Press `Ctrl+C` to terminate safely.
