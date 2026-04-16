@@ -1,4 +1,4 @@
-# Joy-Con Absolute Control for YSFLIGHT & MSFS
+# Joy-Con Absolute Control for YSFLIGHT
 **Architect-Driven AI Implementation of a High-Precision Flight Bridge**
 
 ## 1. プロジェクト概要
@@ -86,7 +86,7 @@ JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
 
 # . English Version (Project Overview & Documentation)
 
-# Joy-Con Absolute Control for YSFLIGHT & MSFS
+# Joy-Con Absolute Control for YSFLIGHT
 **Architect-Driven AI Implementation of a High-Precision Flight Bridge**
 
 ## 1. Project Overview
