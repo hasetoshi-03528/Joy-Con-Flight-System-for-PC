@@ -1,5 +1,5 @@
 # Joy-Con Absolute Control for YSFLIGHT
-**Self-Designed Flight Bridge with AI-Assisted Development**
+**Self-Designed Flight Bridge with AI-Assisted Development**  (S.D.F.B.withAI protocol)
 
 ## 1. プロジェクト概要
 本プロジェクトは、Nintendo Joy-Conの慣性計測装置（IMU）を活用し、PC用フライトシミュレーター（YSFLIGHT、MSFS2020等）を直感的に操縦するためのブリッジシステムです。
@@ -89,7 +89,7 @@ JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
 # . English Version (Project Overview & Documentation)
 
 # Joy-Con Absolute Control for YSFLIGHT
-**Self-Designed Flight Bridge with AI-Assisted Development**
+**Self-Designed Flight Bridge with AI-Assisted Development**  (S.D.F.B.withAI protocol)
 
 ## 1. Project Overview
 This project is a high-precision flight control bridge that utilizes the Inertial Measurement Unit (IMU) of Nintendo Joy-Cons to enable intuitive piloting in flight simulators such as YSFLIGHT and MSFS2020.
