@@ -1,9 +1,11 @@
 # Joy-Con Absolute Control for YSFLIGHT
-**Architect-Driven AI Implementation of a High-Precision Flight Bridge**
+**Self-Designed Flight Bridge with AI-Assisted Development**
 
 ## 1. プロジェクト概要
 本プロジェクトは、Nintendo Joy-Conの慣性計測装置（IMU）を活用し、PC用フライトシミュレーター（YSFLIGHT、MSFS2020等）を直感的に操縦するためのブリッジシステムです。
 
+### 制作背景
+「Joy-Conにジャイロがあるなら、手の動きをそのまま操作に使えるんじゃ？」という単純な疑問から始まりました。ボタン番号の調査、ジャイロ値の設計、表示方法の検討を一つずつ詰めた結果、気づいたら動いていました。将来的なBCI（Brain-Computer Interface）開発への興味から、「身体の動きをデジタル信号として渡す」パイプラインを体感したかったという背景もあります。
 既存のフライトスティックは高価ですが、Joy-Conの高性能なジャイロセンサーを活用することで、安価かつ直感的な操縦を実現します。HIDプロトコルでJoy-Conと直接通信し、vJoy仮想ジョイスティックおよびキーボードエミュレーションを介してゲームに入力を渡す仕組みを一から実装しました。
 
 ### 技術スタック
@@ -87,11 +89,12 @@ JoyCon（L）電池残量：100％｜JoyCon（R）電池残量：075％
 # . English Version (Project Overview & Documentation)
 
 # Joy-Con Absolute Control for YSFLIGHT
-**Architect-Driven AI Implementation of a High-Precision Flight Bridge**
+**Self-Designed Flight Bridge with AI-Assisted Development**
 
 ## 1. Project Overview
 This project is a high-precision flight control bridge that utilizes the Inertial Measurement Unit (IMU) of Nintendo Joy-Cons to enable intuitive piloting in flight simulators such as YSFLIGHT and MSFS2020.
-
+### Background
+This project started with a simple question: "Joy-Con has a gyroscope, so why not use hand movements directly as input?" By investigating button mappings, designing gyro value handling, and refining the output display step by step, it just worked. With a long-term interest in BCI (Brain-Computer Interface) development, I also wanted to experience firsthand the pipeline of translating physical movement into digital signals.
 While dedicated flight sticks are often expensive, this system leverages the high-performance gyro sensors in Joy-Cons to provide a cost-effective yet professional-grade piloting experience. It communicates directly with Joy-Cons via the HID protocol and bridges inputs to the game through vJoy and low-layer keyboard emulation.
 
 ### Technical Stack
